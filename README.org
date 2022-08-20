@@ -1,0 +1,341 @@
+* Emacs Workflows
+
+  I'm going to figure out some good workflows because arduino-ide just sucks in all ways.
+
+  What would be nice is if I could deploy blocks from org directly to an attached arduino
+
+  Maybe something like
+
+  #+begin_src arduino :board leonardo :port /dev/sty0
+  #+end_src
+
+  I just attached the board
+
+  #+begin_src shell
+    arduino-cli board list
+  #+end_src
+
+  #+RESULTS:
+  | Port         | Type   | Board | Name  | FQBN    | Core     |                      |             |
+  | /dev/ttyACM0 | Serial | Port  | (USB) | Arduino | Leonardo | arduino:avr:leonardo | arduino:avr |
+  |              |        |       |       |         |          |                      |             |
+
+  Well lets set up a setch - there's something about the directorory structure that's important
+
+  #+begin_src shell
+    arduino-cli sketch new blinky-blink
+  #+end_src
+
+  Lets also set up tangle-on-save
+  
+   #+begin_src emacs-lisp :results none
+     (add-hook 'after-save-hook 'org-babel-tangle)
+   #+end_src
+
+** Blinky Blink
+   :PROPERTIES:
+   :header-args:shell: :dir ./blinky-blink
+   :END:
+
+    #+RESULTS:
+    : Sketch created in: /home/gmauer/code/arduino-playground/blinky-blink
+
+    #+begin_src shell
+      ls -l blinky-blink
+    #+end_src
+
+    #+RESULTS:
+    | total      | 1 |        |        |    |     |    |       |                  |
+    | -rwx------ | 1 | gmauer | gmauer | 35 | Aug | 18 | 21:51 | blinky-blink.ino |
+    
+   Lets write something we can tangle that will do some bliking
+
+   #+begin_src arduino :tangle ./blinky-blink/blinky-blink.ino
+     const int LIGHT_BLINKING_PIN
+     
+     int counter = 0;
+     
+     
+     void setup()
+     {
+       Serial.begin(9600);
+       pinMode(LIGHT_BLINKING_PIN, OUTPUT);
+     }
+     
+     void loop()
+     {
+       counter = counter + 1;
+     
+       Serial.println(counter);
+     
+       digitalWrite(LIGHT_BLINKING_PIN, HIGH);
+       delay(200);
+       digitalWrite(LIGHT_BLINKING_PIN, LOW);
+       delay(400);
+       digitalWrite(LIGHT_BLINKING_PIN, HIGH);
+       delay(400);
+       digitalWrite(LIGHT_BLINKING_PIN, LOW);
+       delay(200);
+     }
+   #+end_src
+
+   I can compile it like this
+
+   #+begin_src shell :results code :dir .
+     arduino-cli compile -b arduino:avr:leonardo blinky-blink
+   #+end_src
+
+   #+RESULTS:
+   #+begin_src shell
+   Sketch uses 4294 bytes (14%) of program storage space. Maximum is 28672 bytes.
+   Global variables use 153 bytes (5%) of dynamic memory, leaving 2407 bytes for local variables. Maximum is 2560 bytes.
+   #+end_src
+
+   And it looks like that generates some me files
+
+   #+begin_src shell
+     ls -l
+   #+end_src
+
+   #+RESULTS:
+   | total      | 85 |        |        |       |     |    |       |                                                       |
+   | -rwx------ |  1 | gmauer | gmauer | 49000 | Aug | 18 | 22:44 | blinky-blink.arduino.avr.leonardo.elf                 |
+   | -rwx------ |  1 | gmauer | gmauer | 12098 | Aug | 18 | 22:44 | blinky-blink.arduino.avr.leonardo.hex                 |
+   | -rwx------ |  1 | gmauer | gmauer | 21468 | Aug | 18 | 22:44 | blinky-blink.arduino.avr.leonardo.with_bootloader.hex |
+   | -rwx------ |  1 | gmauer | gmauer |   310 | Aug | 18 | 22:04 | blinky-blink.ino                                      |
+
+
+   So lets try to upload? Here's the port
+
+   #+begin_src shell
+     ls /dev | grep ACM
+   #+end_src
+
+   #+RESULTS:
+   : ttyACM0
+
+   #+begin_src shell :dir .
+     arduino-cli upload blinky-blink -b arduino:avr:leonardo -p /dev/ttyACM0
+   #+end_src
+
+   #+RESULTS:
+
+   And that works!
+
+ 
+** Happy Birthday Blinkies 
+   This isn't my code, its from tinkercad
+   #+begin_src arduino
+     int speakerPin = 9;
+     int length = 28;
+     int light,light1,light2,light3,light4,light5,light6;
+     char notes[] = "GGAGcB GGAGdc GGxecBA yyecdc";
+     int beats[] = { 2, 2, 8, 8, 8, 16, 1, 2, 2, 8, 8,8, 16, 1, 2,2,8,8,8,8,16, 1,2,2,8,8,8,16 };
+     int tempo = 150;
+     
+     void playTone(int tone, int duration) {
+       for (long i = 0; i < duration * 1000L; i += tone * 2) {
+         digitalWrite(speakerPin, HIGH);
+         delayMicroseconds(tone);
+         digitalWrite(speakerPin, LOW);
+         delayMicroseconds(tone);
+       }
+     }
+     void playNote(char note, int duration) {
+       char names[] = {'C', 'D', 'E', 'F', 'G', 'A', 'B',           
+                       'c', 'd', 'e', 'f', 'g', 'a', 'b',
+                       'x', 'y' };
+       int tones[] = { 1915, 1700, 1519, 1432, 1275, 1136, 1014,
+                       956,  834,  765,  593,  468,  346,  224,
+                       634, 715 };
+       int SPEE = 5;
+       for (int i = 0; i < 17; i++) {
+         if (names[i] == note) {
+           int newduration = duration/SPEE;
+           playTone(tones[i], newduration);
+         }
+       }
+     }
+     void setup()
+     {
+       pinMode(13, OUTPUT);
+       pinMode(2, OUTPUT);
+       pinMode(3, OUTPUT);
+       pinMode(4, OUTPUT);
+       pinMode(5, OUTPUT);
+       pinMode(6, OUTPUT);
+       pinMode(7, OUTPUT);
+       pinMode(speakerPin, OUTPUT);
+     }
+     
+     void loop()
+     {
+       for (int i = 0; i < length; i++) {
+         if (notes[i] == ' ') {
+           delay(beats[i] * tempo); 
+         } else {
+           playNote(notes[i], beats[i] * tempo);
+           light=random(0,2);
+           light1=random(0,2);  
+           light2=random(0,2);  
+           light3=random(0,2);  
+           light4=random(0,2);  
+           light5=random(0,2); 
+           light6=random(0,2); 
+           digitalWrite(13,light);
+           light=random(0,1);
+           digitalWrite(2, light1);
+           light=random(0,1);   
+           digitalWrite(3, light2);
+           light=random(0,1);
+           digitalWrite(4, light3);
+           light=random(0,1);
+           digitalWrite(5, light4);
+           light=random(0,1);
+           digitalWrite(6, light5);
+           light=random(0,1);
+           digitalWrite(7, light6);
+           delay(50); 
+         }
+         delay(tempo/4);
+       }
+     }
+   #+end_src
+** Scheduled Blinkies 
+
+   Ok so that's cool and all, but I'd like to have a bit smarter of an interface for this stuff. Is it possible to build up a scheduling functionality? This is going to push some of the boundaries on size, but lets try it
+   
+   Maybe something like this
+   #+begin_src arduino
+     void setup() {
+       blinkOnSchedule(LIGHT_BLINKING_PIN, 1000, )
+     }
+   #+end_src
+
+    #+begin_src emacs-lisp :results silent
+      (make-directory "scheduled-blinkies" 't)
+      (async-shell-command "arduino-cli sketch new scheduled-blinkies")
+    #+end_src
+
+   #+begin_src arduino :tangle scheduled-blinkies/scheduled-blinkies.ino
+     // To handle base case of below recursive
+     // Variadic function Template
+     void print() {
+     }
+     
+     // Variadic function Template that takes
+     // variable number of arguments and prints
+     // all of them.
+     template <typename T, typename... Types>
+       void print(T var1, Types... var2) {
+     
+       print(var2...);
+     }
+     
+     void setup() {
+       print(1, 2, 3.14,
+             "Pass me any "
+             "number of arguments",
+             "I will print\n");
+     
+     }
+     
+     void loop() {
+     
+     }
+   #+end_src
+
+   #+begin_src emacs-lisp :dir . :results silent
+     (with-help-window "*Scheduled Blinkies*"
+       (async-shell-command "watchexec -e ino -r -- arduino-cli compile -b arduino:avr:leonardo scheduled-blinkies"
+                            "*Scheduled Blinkies*"))
+   #+end_src
+** Tone Blinkies
+   I have a lot of old speaker parts lying around. Can I make them do a thing with an arduino?
+
+    #+begin_src emacs-lisp :results silent :var name=(->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase)
+      (make-directory name 't)
+      (async-shell-command (format "arduino-cli sketch new %s" name))
+    #+end_src
+
+
+   #+begin_src arduino :tangle (format "%1$s/%1$s.ino" (->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase))
+     void setup() {
+       pinMode(9, OUTPUT);
+     }
+     
+     void loop() {
+       tone(9, 523, 1000); // play C5 (523 Hz) for 1sec async
+       delay(2000); 
+     }
+   #+end_src
+
+   To just compile
+   #+begin_src emacs-lisp :dir . :results silent :var heading-name=(org-get-heading)
+     (let ((buffer-name (format "*%s*" heading-name))
+           (name (->> heading-name (s-replace-all '((" " . "-"))) downcase)))
+      (with-help-window buffer-name
+        (async-shell-command (format "watchexec -e ino -r -- arduino-cli compile -b arduino:avr:leonardo %s" name)
+                             buffer-name)))
+   #+end_src
+
+   To compile and upload
+   #+begin_src emacs-lisp :dir . :results silent :var heading-name=(org-get-heading)
+     (let ((buffer-name (format "*%s*" heading-name))
+           (name (->> heading-name (s-replace-all '((" " . "-"))) downcase)))
+      (with-help-window buffer-name
+        (async-shell-command (format "watchexec -e ino -r -- arduino-cli compile -b arduino:avr:leonardo -u -p /dev/ttyACM0 %s" name)
+                             buffer-name)))
+   #+end_src
+** Read From Pot 
+   [[https://www.tinkercad.com/things/0Ee53u7Vcw1-magnificent-fulffy/editel?tenant=circuits][Simulation]]
+    #+begin_src emacs-lisp :results silent :var name=(->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase)
+      (make-directory name 't)
+      (async-shell-command (format "arduino-cli sketch new %s" name))
+    #+end_src
+
+   #+begin_src arduino
+   #+end_src
+** Playground
+   
+    #+begin_src emacs-lisp :dir /tmp/playground
+      (make-directory "/tmp/template-test" 't)
+      (async-shell-command "arduino-cli sketch new template-test")
+    #+end_src
+
+    #+RESULTS:
+    : #<window 291 on *Async Shell Command*>
+  
+   Can we do templates?
+   
+   #+begin_src arduino :tangle /tmp/playground/template-test/template-test.ino
+     // To handle base case of below recursive
+     // Variadic function Template
+     void print() {
+     }
+     
+     // Variadic function Template that takes
+     // variable number of arguments and prints
+     // all of them.
+     template <typename T, typename... Types>
+       void print(T var1, Types... var2) {
+     
+       print(var2...);
+     }
+     
+     void setup() {
+       print(1, 2, 3.14,
+             "Pass me any "
+             "number of arguments",
+             "I will print\n");
+     
+     }
+     void loop() {
+     }
+   #+end_src
+
+   #+begin_src emacs-lisp :dir /tmp/playground :results silent
+     (with-help-window "*Playground Build*"
+       (async-shell-command "arduino-cli compile -b arduino:avr:leonardo template-test" "*Playground Build*"))
+   #+end_src
+
