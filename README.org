@@ -294,7 +294,41 @@
       (async-shell-command (format "arduino-cli sketch new %s" name))
     #+end_src
 
-   #+begin_src arduino
+   #+begin_src arduino :tangle (format "%1$s/%1$s.ino" (->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase))
+     int potentiometerValue = 500;
+     
+     void setup()
+     {
+       pinMode(A1, INPUT);
+       pinMode(9, OUTPUT);
+       Serial.begin(9600);
+     }
+     
+     void loop()
+     {
+       potentiometerValue = analogRead(A1);
+       digitalWrite(9, HIGH);
+       Serial.println(potentiometerValue);
+       delay(potentiometerValue); // Wait for potentiometerValue millisecond(s)
+       digitalWrite(9, LOW);
+       delay(potentiometerValue); // Wait for potentiometerValue millisecond(s)
+     }
+   #+end_src
+   
+   #+begin_src emacs-lisp :dir . :results silent :var heading-name=(org-get-heading)
+     (let ((buffer-name (format "*%s*" heading-name))
+           (name (->> heading-name (s-replace-all '((" " . "-"))) downcase)))
+      (with-help-window (get-buffer-create buffer-name)
+        (async-shell-command (format "watchexec -e ino -r -- arduino-cli compile -b arduino:avr:leonardo -u -p /dev/ttyACM1 %s" name)
+                             buffer-name)))
+   #+end_src
+   
+   #+begin_src emacs-lisp :dir . :results silent :var heading-name="Serial Monitor"
+     (let ((buffer-name (format "*%s*" heading-name))
+           (name (->> heading-name (s-replace-all '((" " . "-"))) downcase)))
+      (with-help-window (get-buffer-create buffer-name)
+        (async-shell-command (format "cat /dev/ttyACM1" name)
+                             buffer-name)))
    #+end_src
 ** Playground
    
