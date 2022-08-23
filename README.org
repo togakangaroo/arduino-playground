@@ -330,6 +330,16 @@
         (async-shell-command (format "cat /dev/ttyACM1" name)
                              buffer-name)))
    #+end_src
+
+** Ultrasonic Range Finder
+   
+    #+begin_src emacs-lisp :results silent :var name=(->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase)
+      (make-directory name 't)
+      (async-shell-command (format "arduino-cli sketch new %s" name))
+    #+end_src
+
+    [[file:ultrasonic-range-finder/README.org][Here it is]] 
+
 ** Playground
    
     #+begin_src emacs-lisp :dir /tmp/playground

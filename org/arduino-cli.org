@@ -1,0 +1,8 @@
+* Arduino board list
+  
+  List connected boards
+  
+  #+name: board-list
+  #+begin_src shell
+    arduino-cli board list
+  #+end_src

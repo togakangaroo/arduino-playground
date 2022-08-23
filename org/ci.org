@@ -1,0 +1,12 @@
+* Compile and Deploy
+
+  Run a buffer to compile and deploy the script in the current directory
+  
+  #+name: compile-and-deploy
+  #+begin_src emacs-lisp :dir .. :results silent :var heading-name=(org-get-heading) :var port="/dev/ttyACM0"
+    (let ((buffer-name (format "*%s*" heading-name))
+          (name (->> heading-name (s-replace-all '((" " . "-"))) downcase)))
+    (with-help-window (get-buffer-create buffer-name)
+      (async-shell-command (format "watchexec -e ino -r -- arduino-cli compile -b arduino:avr:leonardo -u -p %s %s" port name)
+                            buffer-name)))
+  #+end_src
