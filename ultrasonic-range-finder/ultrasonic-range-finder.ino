@@ -1,28 +1,38 @@
-const int ULTRASONIC_TRIG = 7;
-const int ULTRASONIC_ECHO = 8;
+const int trigPin = 10;
+const int echoPin = 9;
+// defines variables
+long duration;
+int distance;
 
-long readUltrasonicDistance(int triggerPin, int echoPin)
-{
-  pinMode(triggerPin, OUTPUT);  // Clear the trigger
-  digitalWrite(triggerPin, LOW);
+void setup() {
+  pinMode(6, OUTPUT);
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+  Serial.begin(9600); // Starts the serial communication
+}
+
+void loop() {
+  digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
-  digitalWrite(triggerPin, HIGH);
+  // Sets the trigPin on HIGH state for 10 micro seconds
+  digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
-  digitalWrite(triggerPin, LOW);
-  pinMode(echoPin, INPUT);
-  // Reads the echo pin, and returns the sound wave travel time in microseconds
-  return pulseIn(echoPin, HIGH);
-}
+  digitalWrite(trigPin, LOW);
+  // Reads the echoPin, returns the sound wave travel time in microseconds
+  duration = pulseIn(echoPin, HIGH);
+  // Calculating the distance
+  distance = duration * 0.034 / 2;
 
-void setup()
-{
-  pinMode(9, OUTPUT);
-  Serial.begin(9600);
-}
+  long blinkDuration = distance * 4;
+  if(blinkDuration > 759) {
+    blinkDuration = 759;
+  }
 
-void loop()
-{
-  long distance = readUltrasonicDistance(ULTRASONIC_TRIG, ULTRASONIC_ECHO);
-  Serial.println(distance);
-  delay(500); 
+  Serial.print("Blinky: ");
+  Serial.println(blinkDuration);
+  digitalWrite(6, HIGH);
+  delay(blinkDuration);
+  digitalWrite(6, LOW);
+  delay(blinkDuration);
+
 }
