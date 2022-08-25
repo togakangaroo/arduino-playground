@@ -1,0 +1,105 @@
+** Ultrasonic Range Finder
+   I got some new HC-SR04s in the mail and want to wire them up to a blinky and maybe a speaker (like a theremin I guess?) because I'm pretty sure the old one I have isn't working
+
+
+   #+begin_src arduino
+
+     const int ULTRASONIC_TRIG = 7;
+     const int ULTRASONIC_ECHO = 8;
+
+     long readUltrasonicDistance(int triggerPin, int echoPin)
+     {
+       pinMode(triggerPin, OUTPUT);  // Clear the trigger
+       digitalWrite(triggerPin, LOW);
+       delayMicroseconds(2);
+       digitalWrite(triggerPin, HIGH);
+       delayMicroseconds(10);
+       digitalWrite(triggerPin, LOW);
+       pinMode(echoPin, INPUT);
+       // Reads the echo pin, and returns the sound wave travel time in microseconds
+       return pulseIn(echoPin, HIGH);
+     }
+
+     void setup()
+     {
+       pinMode(9, OUTPUT);
+       Serial.begin(9600);
+     }
+
+     void loop()
+     {
+       long distance = readUltrasonicDistance(ULTRASONIC_TRIG, ULTRASONIC_ECHO);
+       Serial.println(distance);
+       delay(500);
+     }
+
+   #+end_src
+
+   #+call:../org/ci.org:compile-and-deploy(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name file-name-directory), port="/dev/ttyACM1")
+
+   #+call:../org/serial-monitor.org:serial-monitor(port="/dev/ttyACM0")
+
+
+   #+call:../org/arduino-cli.org:board-list()
+
+   #+RESULTS:
+   | Port         | Type   | Board | Name  | FQBN    | Core     |                      |             |
+   | /dev/ttyACM0 | Serial | Port  | (USB) | Arduino | Leonardo | arduino:avr:leonardo | arduino:avr |
+   |              |        |       |       |         |          |                      |             |
+
+   Well shoot. THe ultrasonic finder still gave me zeroes. Let me try to simulate it first. [[https://www.tinkercad.com/things/gLX1VKz63CQ-powerful-jaagub/editel?tenant=circuits][Here you go.]]
+
+   #+begin_src arduino :tangle (format "%1$s.ino" (->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase))
+     int distance = 0;
+     int lightPin = 6;
+     
+     long readUltrasonicDistance(int triggerPin, int echoPin)
+     {
+       digitalWrite(triggerPin, LOW);
+       delayMicroseconds(2);
+       // Sets the trigger pin to HIGH state for 10 microseconds
+       digitalWrite(triggerPin, HIGH);
+       delayMicroseconds(10);
+       digitalWrite(triggerPin, LOW);
+       // Reads the echo pin, and returns the sound wave travel time in microseconds
+       return pulseIn(echoPin, HIGH);
+     }
+     
+     void setup()
+     {
+       Serial.begin(9600);
+       pinMode(10, OUTPUT);  // Clear the trigger
+       pinMode(9, INPUT);
+     }
+     
+     void loop()
+     {
+       distance = 0.01723 * readUltrasonicDistance(10, 9);
+       Serial.print("1 Blinky: ");
+       long blinkDuration = distance * 6;
+       if(blinkDuration > 759) {
+         blinkDuration = 759;
+       }
+       Serial.println(blinkDuration);
+       digitalWrite(6, HIGH);
+       delay(blinkDuration);
+       digitalWrite(6, LOW);
+       delay(blinkDuration);
+     }
+   #+end_src
+
+
+  #+begin_src emacs-lisp :dir . :results silent :var heading-name=(org-get-heading)
+    (let* ((buffer-name (format "*%s*" heading-name))
+           (name (->> heading-name (s-replace-all '((" " . "-"))) downcase))
+           (buffer (get-buffer-create buffer-name)))
+      (with-help-window buffer
+        (when-let (process (get-buffer-process buffer))
+                  (kill-process process))
+        (async-shell-command (format "watchexec -r -e ino -- arduino-cli compile -b arduino:avr:leonardo -v" name)
+                             buffer-name)))
+  #+end_src
+   #+begin_src emacs-lisp :dir .. :results silent
+     (async-shell-command "arduino-cli upload ultrasonic-range-finder -b arduino:avr:leonardo -p /dev/ttyACM0 -v")
+   #+end_src
+

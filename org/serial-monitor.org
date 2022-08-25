@@ -1,0 +1,20 @@
+* Serial Monitor
+
+  Open up the "Serial Monitor" buffer streaming the results of the serial monitor on port.
+  
+  #+name: serial-monitor
+  #+begin_src emacs-lisp :results silent :var name="Serial Monitor" :var port="/dev/ttyACM0"
+    (let* ((buffer-name (format "*%s*" name)))
+      (with-help-window (get-buffer-create buffer-name)
+        (async-shell-command (format "cat %s" port)
+                            buffer-name)))
+  #+end_src
+
+  You can even see what's connected to ports used by arduino
+  
+  #+begin_src shell
+    ls /dev | grep ACM
+  #+end_src
+
+  #+RESULTS:
+
