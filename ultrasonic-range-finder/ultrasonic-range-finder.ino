@@ -1,38 +1,36 @@
-const int trigPin = 10;
-const int echoPin = 9;
-// defines variables
-long duration;
-int distance;
+int distance = 0;
+int lightPin = 6;
 
-void setup() {
-  pinMode(6, OUTPUT);
-  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
-  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
-  Serial.begin(9600); // Starts the serial communication
+long readUltrasonicDistance(int triggerPin, int echoPin)
+{
+  digitalWrite(triggerPin, LOW);
+  delayMicroseconds(2);
+  // Sets the trigger pin to HIGH state for 10 microseconds
+  digitalWrite(triggerPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(triggerPin, LOW);
+  // Reads the echo pin, and returns the sound wave travel time in microseconds
+  return pulseIn(echoPin, HIGH);
 }
 
-void loop() {
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  // Sets the trigPin on HIGH state for 10 micro seconds
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echoPin, HIGH);
-  // Calculating the distance
-  distance = duration * 0.034 / 2;
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(10, OUTPUT);  // Clear the trigger
+  pinMode(9, INPUT);
+}
 
-  long blinkDuration = distance * 4;
+void loop()
+{
+  distance = 0.01723 * readUltrasonicDistance(10, 9);
+  Serial.print("1 Blinky: ");
+  long blinkDuration = distance * 6;
   if(blinkDuration > 759) {
     blinkDuration = 759;
   }
-
-  Serial.print("Blinky: ");
   Serial.println(blinkDuration);
   digitalWrite(6, HIGH);
   delay(blinkDuration);
   digitalWrite(6, LOW);
   delay(blinkDuration);
-
 }
