@@ -1,5 +1,6 @@
 int distance = 0;
-int lightPin = 6;
+const int lightPin = 6;
+const int speakerPin = 8;
 
 long readUltrasonicDistance(int triggerPin, int echoPin)
 {
@@ -23,14 +24,19 @@ void setup()
 void loop()
 {
   distance = 0.01723 * readUltrasonicDistance(10, 9);
-  Serial.print("1 Blinky: ");
+  Serial.print("2 Blinky: ");
+  Serial.println(distance);
+  if(distance < 30) {
+    tone(speakerPin, 523);
+  } else {
+    noTone(speakerPin);
+  }
   long blinkDuration = distance * 6;
   if(blinkDuration > 759) {
     blinkDuration = 759;
   }
-  Serial.println(blinkDuration);
-  digitalWrite(6, HIGH);
+  digitalWrite(lightPin, HIGH);
   delay(blinkDuration);
-  digitalWrite(6, LOW);
+  digitalWrite(lightPin, LOW);
   delay(blinkDuration);
 }
