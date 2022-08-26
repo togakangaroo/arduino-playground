@@ -27,16 +27,18 @@ void loop()
   Serial.print("2 Blinky: ");
   Serial.println(distance);
   if(distance < 30) {
-    tone(speakerPin, 523);
+    int frequency = distance*25;
+    tone(speakerPin, frequency);
   } else {
     noTone(speakerPin);
   }
-  long blinkDuration = distance * 6;
-  if(blinkDuration > 759) {
-    blinkDuration = 759;
-  }
-  digitalWrite(lightPin, HIGH);
-  delay(blinkDuration);
-  digitalWrite(lightPin, LOW);
-  delay(blinkDuration);
+  delay(100);
+  /* long blinkDuration = distance * 6; */
+  /* if(blinkDuration > 759) { */
+  /*   blinkDuration = 759; */
+  /* } */
+  /* digitalWrite(lightPin, HIGH); */
+  /* delay(blinkDuration); */
+  /* digitalWrite(lightPin, LOW); */
+  /* delay(blinkDuration); */
 }
