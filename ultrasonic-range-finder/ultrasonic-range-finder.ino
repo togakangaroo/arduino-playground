@@ -1,6 +1,15 @@
-int distance = 0;
-const int lightPin = 6;
-const int speakerPin = 8;
+struct RangePlayer {
+  int triggerPin;
+  int echoPin;
+  int speakerPin;
+  int minDistance;
+  int maxDistance;
+  int frequencyMultiplier;
+};
+
+RangePlayer players[2] {
+  {  7,  9,  5,  0, 40, 25  },
+  { 10, 14, 18,  9, 60, 15 }};
 
 long readUltrasonicDistance(int triggerPin, int echoPin)
 {
@@ -17,28 +26,25 @@ long readUltrasonicDistance(int triggerPin, int echoPin)
 void setup()
 {
   Serial.begin(9600);
-  pinMode(10, OUTPUT);  // Clear the trigger
-  pinMode(9, INPUT);
+  for(RangePlayer player : players) {
+    pinMode(player.triggerPin, OUTPUT);
+    pinMode(player.echoPin, INPUT);
+    pinMode(player.speakerPin, OUTPUT);
+  }
 }
 
 void loop()
 {
-  distance = 0.01723 * readUltrasonicDistance(10, 9);
-  Serial.print("2 Blinky: ");
-  Serial.println(distance);
-  if(distance < 30) {
-    int frequency = distance*25;
-    tone(speakerPin, frequency);
-  } else {
-    noTone(speakerPin);
+  Serial.println("3 Blinky: ");
+  for(RangePlayer player : players) {
+    int distance = 0.01723 * readUltrasonicDistance(player.triggerPin, player.echoPin);
+    Serial.println(distance);
+    if(player.minDistance < distance && distance < player.maxDistance) {
+      int frequency = distance*player.frequencyMultiplier;
+      tone(player.speakerPin, frequency);
+    } else {
+      noTone(player.speakerPin);
+    }
   }
   delay(100);
-  /* long blinkDuration = distance * 6; */
-  /* if(blinkDuration > 759) { */
-  /*   blinkDuration = 759; */
-  /* } */
-  /* digitalWrite(lightPin, HIGH); */
-  /* delay(blinkDuration); */
-  /* digitalWrite(lightPin, LOW); */
-  /* delay(blinkDuration); */
 }
