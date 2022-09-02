@@ -340,6 +340,15 @@
 
     [[file:ultrasonic-range-finder/README.org][Here it is]] 
 
+** Internal Timer
+   
+    #+begin_src emacs-lisp :results silent :var name=(->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase)
+      (make-directory name 't)
+      (async-shell-command (format "arduino-cli sketch new %s" name))
+    #+end_src
+
+    [[file:internal-timer/README.org][Here it is]] 
+    
 ** Playground
    
     #+begin_src emacs-lisp :dir /tmp/playground

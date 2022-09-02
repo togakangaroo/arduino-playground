@@ -1,0 +1,58 @@
+* Internal Timer
+  - Borrowing heavily from [[https://create.arduino.cc/projecthub/Marcazzan_M/internal-timers-of-arduino-58f6c9][this code]]
+  #+begin_src arduino :tangle (format "%1$s.ino" (->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase))
+    unsigned int time=0;
+    
+    struct LightState {
+      bool isOn;
+    };
+    
+    LightState state[2] {{ 1 }, { 0 }};
+    
+    void setup() {
+      pinMode(3, OUTPUT);
+      pinMode(4, OUTPUT);
+    
+      TCCR0A = (1 << WGM01); //CTC mode
+      OCR0A = 250; //This sets resulution to 1ms for some reason
+    
+      TIMSK0 |= (1 << OCIE0A); //set interrupt request
+      sei(); //enable interrupt
+    
+      // prescale 1/64 clock? what's that?
+      TCCR0B |= (1 << CS01);
+      TCCR0B |= (1 << CS00);
+    }
+    
+    void loop() {
+      // On and off every other third of a second
+      state[0] = { ((time / (1*333)) % 2) };
+    
+      // On and off every 3/5ths second
+      state[1] = { ((time / (3*200)) % 2) };
+    
+      digitalWrite(4, state[0].isOn);
+      digitalWrite(3, state[1].isOn);
+    }
+    
+    ISR(TIMER0_COMPA_vect) { // interrupt request
+      if(time == 0xFFFF) {
+        time = 0;
+      } else {
+        time++;
+      }
+    }
+  #+end_src
+
+  Yay [[https://www.tinkercad.com/things/9htiLwe6y4P-shiny-fulffy-robo/editel?tenant=circuits][this works]] in the simulation
+  
+   #+call:../org/arduino-cli.org:board-list()
+
+   #+RESULTS:
+   | Port         | Type   | Board | Name  | FQBN    | Core     |                      |             |
+   | /dev/ttyACM0 | Serial | Port  | (USB) | Arduino | Leonardo | arduino:avr:leonardo | arduino:avr |
+   |              |        |       |       |         |          |                      |             |
+
+   #+call:../org/ci.org:compile(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name))
+   
+   #+call:../org/ci.org:compile-and-deploy(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name), port="/dev/ttyACM0")
