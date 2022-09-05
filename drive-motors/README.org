@@ -1,0 +1,57 @@
+* Drive Motors
+  Figuring out how to use the Arduino Duemilanove to drive some motors
+
+  Taking inspiration and circuit diagram from [[https://classroom.creationcrate.com/courses/take/03-rover-bot-1/texts/7831273-arduino-create-complete-program][the creation crate]]
+  
+  A reminder of how motor movement works
+  
+  | IN1 | IN2 | MOTOR     |
+  |-----+-----+-----------|
+  |   0 |   0 | stop      |
+  |   0 |   1 | clockwise |
+  |   1 |   0 | counter   |
+  |   1 |   1 | stop      |
+  
+  #+begin_src arduino :tangle (format "%1$s.ino" (->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase))
+    #define MOTOR1_ENA 3
+    #define MOTOR1_IN1 4
+    #define MOTOR1_IN2 5
+    
+    bool clockwise = 0;
+    
+    void setup() {
+      pinMode(MOTOR1_ENA, OUTPUT);
+      pinMode(MOTOR1_IN1, OUTPUT);
+      pinMode(MOTOR1_IN2, OUTPUT);
+    
+      delay(200);
+    
+      analogWrite(MOTOR1_ENA, 50);
+      digitalWrite(MOTOR1_IN1, LOW);
+      digitalWrite(MOTOR1_IN2, LOW);
+    }
+    
+    void loop() {
+      if(clockwise) {
+        digitalWrite(MOTOR1_IN1, LOW);
+        digitalWrite(MOTOR1_IN2, HIGH);
+      } else {
+        digitalWrite(MOTOR1_IN1, HIGH);
+        digitalWrite(MOTOR1_IN2, LOW);
+      }
+    
+      delay(3000);
+      clockwise = !clockwise;
+    }
+  #+end_src
+
+  #+call:../org/arduino-cli.org:board-list()
+
+  #+RESULTS:
+  | Port         | Type   | Board | Name  | FQBN    | Core |
+  | /dev/ttyUSB0 | Serial | Port  | (USB) | Unknown |      |
+  |              |        |       |       |         |      |
+
+  #+call:../org/ci.org:compile(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name))
+
+  #+call:../org/ci.org:compile-and-deploy(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name), port="/dev/ttyUSB0", board="arduino:avr:diecimila:cpu=atmega328")

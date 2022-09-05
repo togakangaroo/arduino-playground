@@ -16,12 +16,12 @@
   Run a buffer to compile and deploy the script in the current directory
   
   #+name: compile-and-deploy
-  #+begin_src emacs-lisp :dir .. :results silent :var default-directory=(spacemacs/copy-directory-path) :var heading-name=(org-get-heading) :var port="/dev/ttyACM0"
+  #+begin_src emacs-lisp :dir .. :results silent :var default-directory=(spacemacs/copy-directory-path) :var heading-name=(org-get-heading) :var port="/dev/ttyACM0" :var board="arduino:avr:leonardo"
     (let* ((buffer-name (format "*%s*" heading-name))
            (output-buffer (get-buffer-create buffer-name)))
       (with-help-window output-buffer
         (when-let (process (get-buffer-process output-buffer))
                   (kill-process process))
-        (async-shell-command (format "watchexec -e ino -r -- arduino-cli compile -b arduino:avr:leonardo -v -u -p %s" port)
+        (async-shell-command (format "watchexec -e ino -r -- arduino-cli compile -b %s -v -u -p %s" board port)
                              buffer-name)))
   #+end_src

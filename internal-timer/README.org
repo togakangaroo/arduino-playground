@@ -68,14 +68,5 @@
 
    #+call:../org/ci.org:compile(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name))
    
-   #+call:../org/ci.org:compile-and-deploy(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name), port="/dev/ttyUSB0")
+   #+call:../org/ci.org:compile-and-deploy(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name), port="/dev/ttyUSB0", board="arduino:avr:diecimila:cpu=atmega328")
 
-  #+begin_src emacs-lisp :dir .. :results silent :var default-directory=(spacemacs/copy-directory-path) :var heading-name=(org-get-heading) :var port="/dev/ttyUSB0"
-    (let* ((buffer-name (format "*%s*" heading-name))
-           (output-buffer (get-buffer-create buffer-name)))
-      (with-help-window output-buffer
-        (when-let (process (get-buffer-process output-buffer))
-                  (kill-process process))
-        (async-shell-command (format "watchexec -e ino -r -- arduino-cli compile -b arduino:avr:diecimila:cpu=atmega328 -v -u -p %s" port)
-                             buffer-name)))
-  #+end_src

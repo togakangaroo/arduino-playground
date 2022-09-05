@@ -349,6 +349,13 @@
 
     [[file:internal-timer/README.org][Here it is]] 
     
+** Drive Motors
+
+   Lets drive motors
+   
+   #+call: ./org/arduino-cli.org:create-sketch(
+
+    [[file:drive-motors/README.org][Here it is]] 
 ** Playground
    
     #+begin_src emacs-lisp :dir /tmp/playground
@@ -391,4 +398,3 @@
      (with-help-window "*Playground Build*"
        (async-shell-command "arduino-cli compile -b arduino:avr:leonardo template-test" "*Playground Build*"))
    #+end_src
-
