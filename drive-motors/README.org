@@ -1,7 +1,7 @@
 * Drive Motors
   Figuring out how to use the Arduino Duemilanove to drive some motors
 
-  Taking inspiration and circuit diagram from [[https://classroom.creationcrate.com/courses/take/03-rover-bot-1/texts/7831273-arduino-create-complete-program][the creation crate]]
+  Taking inspiration and circuit diagram from [[https://classroom.creationcrate.com/courses/take/03-rover-bot-1/texts/7831273-arduino-create-complete-program][the creation crate]] so using the [[https://lastminuteengineers.com/l298n-dc-stepper-driver-arduino-tutorial/][L298N DC]]
   
   A reminder of how motor movement works
   
@@ -19,19 +19,23 @@
     
     bool clockwise = 0;
     
+    const int maxSpeed = 200;
+    
     void setup() {
+      Serial.begin(9600);
+    
       pinMode(MOTOR1_ENA, OUTPUT);
       pinMode(MOTOR1_IN1, OUTPUT);
       pinMode(MOTOR1_IN2, OUTPUT);
     
       delay(200);
     
-      analogWrite(MOTOR1_ENA, 50);
       digitalWrite(MOTOR1_IN1, LOW);
       digitalWrite(MOTOR1_IN2, LOW);
     }
     
     void loop() {
+      analogWrite(MOTOR1_ENA, maxSpeed);
       if(clockwise) {
         digitalWrite(MOTOR1_IN1, LOW);
         digitalWrite(MOTOR1_IN2, HIGH);
@@ -41,9 +45,20 @@
       }
     
       delay(3000);
+    
+      for(int speed = maxSpeed; speed > 0; speed -= 10) {
+        analogWrite(MOTOR1_ENA, speed);
+        delay(100);
+      }
       clockwise = !clockwise;
+      Serial.println("swap");
     }
+    
   #+end_src
+
+  This works! But the motor control board does a high pitch wine when speed is ~50~. [[https://www.trainboard.com/highball/index.php?threads/buzzing-sound-using-an-h-bridge.120312/][According to this]] that is normal at lower speeds?
+
+  I added a speed step-down and the effect sure is cool
 
   #+call:../org/arduino-cli.org:board-list()
 
@@ -55,3 +70,5 @@
   #+call:../org/ci.org:compile(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name))
 
   #+call:../org/ci.org:compile-and-deploy(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name), port="/dev/ttyUSB0", board="arduino:avr:diecimila:cpu=atmega328")
+
+   #+call:../org/serial-monitor.org:serial-monitor(port="/dev/ttyUSB0")

@@ -63,10 +63,10 @@
 
    #+RESULTS:
    | Port         | Type   | Board | Name  | FQBN    | Core |
-   | /dev/ttyUSB0 | Serial | Port  | (USB) | Unknown |      |
+   | /dev/ttyUSB1 | Serial | Port  | (USB) | Unknown |      |
    |              |        |       |       |         |      |
 
    #+call:../org/ci.org:compile(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name))
    
-   #+call:../org/ci.org:compile-and-deploy(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name), port="/dev/ttyUSB0", board="arduino:avr:diecimila:cpu=atmega328")
+   #+call:../org/ci.org:compile-and-deploy(default-directory=(-> (spacemacs/copy-directory-path) directory-file-name), port="/dev/ttyUSB1", board="arduino:avr:diecimila:cpu=atmega328")
 
