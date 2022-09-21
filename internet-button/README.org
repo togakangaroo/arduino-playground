@@ -1,0 +1,37 @@
+* Internet Button
+  
+  I have an [[https://docs.particle.io/reference/datasheets/accessories/legacy-accessories/#internet-button-library][Internet Button]]. Here's [[https://build.particle.io/libs/InternetButton/0.1.11/tab/1_Blink_An_LED.cpp][some code for it]]. It's apparently also an arduino ([[https://community.particle.io/t/what-is-an-internet-button/33416/3][edit: no, it is not]]), I had just assumed it was a keyboard. It might even be wifi enabled
+
+  [[https://docs.particle.io/getting-started/developer-tools/cli/][There's a cli you can install]]
+  
+  #+begin_src emacs-lisp :results silent
+    (async-shell-command "npm install -g particle-cli")
+  #+end_src
+
+  And once we've installed that
+  
+  #+begin_src emacs-lisp :results silent
+    (async-shell-command "particle login")
+  #+end_src
+
+  Ok then, we can now
+  
+** Claim my device via the cli
+   [[https://docs.particle.io/community/photon-maker-kit-workshop/ch1/#particle-cli-instructions][Link]]
+
+   This is best run in an (ansi-term) shell
+  #+begin_src emacs-lisp 
+    particle setup
+  #+end_src
+
+  And now I can go to particle cloud my devices [[https://build.particle.io/libs/InternetButton/0.1.11/tab/1_Blink_An_LED.cpp][and nae it Internet Button]] cool!
+  
+  Requires ([[https://github.com/kilobyte/colorized-logs][colorized-logs]])
+  #+begin_src shell
+    particle list | ansi2txt
+  #+end_src
+
+  #+RESULTS:
+  : Internet Button [37002c000347343339373536] (Photon) is online
+
+Nice!  
