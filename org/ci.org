@@ -4,7 +4,8 @@
   #+name: compile
   #+begin_src emacs-lisp :dir . :results silent :var heading-name=(org-get-heading) :var default-directory=(spacemacs/copy-directory-path)
     (let* ((buffer-name (format "*%s*" heading-name))
-           (output-buffer (get-buffer-create buffer-name)))
+           (output-buffer (get-buffer-create buffer-name))
+           (async-shell-command-buffer nil))
       (with-help-window output-buffer
         (when-let (process (get-buffer-process output-buffer))
                   (kill-process process))
@@ -16,9 +17,10 @@
   Run a buffer to compile and deploy the script in the current directory
   
   #+name: compile-and-deploy
-  #+begin_src emacs-lisp :dir .. :results silent :var default-directory=(spacemacs/copy-directory-path) :var heading-name=(org-get-heading) :var port="/dev/ttyACM0" :var board="arduino:avr:leonardo"
+  #+begin_src emacs-lisp :dir .. :results silent :var default-directory=(spacemacs/copy-directory-path) :var heading-name=(org-get-heading) :var port="/dev/ttyACM0" :var board="arduino:avr:leonardo
     (let* ((buffer-name (format "*%s*" heading-name))
-           (output-buffer (get-buffer-create buffer-name)))
+           (output-buffer (get-buffer-create buffer-name))
+           (async-shell-command-buffer nil))
       (with-help-window output-buffer
         (when-let (process (get-buffer-process output-buffer))
                   (kill-process process))
