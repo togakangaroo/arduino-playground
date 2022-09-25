@@ -1,0 +1,242 @@
+* Avoiding Robot
+  :PROPERTIES:
+  :workspace-directory: /tmp/avoiding-robot
+  :header-args: :dir (car (org-property-values "workspace-directory")) :noweb yes
+  :END:
+
+  Now that we know how to drive motors and how to use an ultrasonic sensor then lets connect them together ala the challenge create robot
+  
+
+** Setup 
+   #+begin_src emacs-lisp :results silent
+     (make-directory (car (org-property-values "workspace-directory")) 't)
+   #+end_src
+
+   Which is this: src_emacs-lisp[]{(find-file (car (org-property-values "workspace-directory")))}
+   
+** Code
+   :PROPERTIES:
+   :header-args:arduino: :eval no :tangle (format "%s/avoiding-robot.ino" (car (org-property-values "workspace-directory")))
+   :END:
+  
+   Wait why doesn't the above work when it is this?
+   
+   Here is where I will put the code that will be tangled into the ino file
+ 
+*** Constants
+   
+**** Pins
+     
+     #+begin_src arduino
+       struct UltrasonicSensorPins {
+         int trigger;
+         int echo;
+       };
+       
+       const UltrasonicSensorPins ultrasonicSensors[1] = {{2, 3}};
+     #+end_src
+   
+     Since the control for a motor is  
+    
+     | IN1 | IN2 | MOTOR     |
+     |-----+-----+-----------|
+     |   0 |   0 | stop      |
+     |   0 |   1 | clockwise |
+     |   1 |   0 | counter   |
+     |   1 |   1 | stop      |
+    
+     We have a motor on each of two drive wheels, we need two configurations
+
+     On our [[https://lastminuteengineers.com/l298n-dc-stepper-driver-arduino-tutorial/][L298N DC]] motor controller, each will have 3 pins, 2 for direction control and one for speed adjustment.
+    
+     #+begin_src arduino
+       struct MotorPins {
+         int in1;
+         int in2;
+         int ena;
+       };
+       
+       const MotorPins motors[2] = { {4, 5, 6}, {7, 8, 9}};
+     #+end_src
+
+     I'd also like to communicate program state with a speaker
+
+     #+begin_src arduino
+       const int speakerPins[1] { 10 };
+     #+end_src
+    
+*** Global State 
+   
+    
+*** Helper Functions 
+**** Motor
+     #+begin_src arduino
+       void stopMotor(MotorPins motor) {
+         digitalWrite(motor.in1, LOW);
+         digitalWrite(motor.in2, LOW);
+       }
+     #+end_src
+     
+     #+begin_src arduino
+       void turnMotorClockwise(MotorPins motor) {
+         digitalWrite(motor.in1, LOW);
+         digitalWrite(motor.in2, HIGH);
+       }
+     #+end_src
+     
+     #+begin_src arduino
+       void turnMotorCounterClockwise(MotorPins motor) {
+         digitalWrite(motor.in1, HIGH);
+         digitalWrite(motor.in2, LOW);
+       }
+     #+end_src
+
+     Finally set peed on all motors
+     
+     #+begin_src arduino 
+       void setSpeed(int speed) {
+         for(MotorPins motor : motors) {
+           analogWrite(motor.ena, speed);
+         }
+       }
+     #+end_src
+**** Driving 
+     
+     #+begin_src arduino
+       void stop() {
+         for(MotorPins motor : motors) {
+           stopMotor(motor);
+         }
+       }
+     #+end_src
+     
+     #+begin_src arduino
+       void goForward() {
+         for(MotorPins motor : motors) {
+           turnMotorClockwise(motor);
+         }
+       }
+     #+end_src
+     
+     #+begin_src arduino
+       void goBackward() {
+         for(MotorPins motor : motors) {
+           turnMotorCounterClockwise(motor);
+         }
+       }
+     #+end_src
+     
+     #+begin_src arduino
+       void turnClockwise() {
+         turnMotorCounterClockwise(motors[0]);
+         turnMotorClockwise(motors[1]);
+       }
+     #+end_src
+**** Read ultrasonic distance 
+     
+     #+begin_src arduino
+       long readUltrasonicDistance(UltrasonicSensorPins ultrasonicSensor)
+       {
+         pinMode(ultrasonicSensor.trigger, OUTPUT);  // Clear the trigger
+         digitalWrite(ultrasonicSensor.trigger, LOW);
+         delayMicroseconds(2);
+         digitalWrite(ultrasonicSensor.trigger, HIGH);
+         delayMicroseconds(10);
+         digitalWrite(ultrasonicSensor.trigger, LOW);
+         pinMode(ultrasonicSensor.echo, INPUT);
+         // Reads the echo pin, and returns the sound wave travel time in microseconds
+         return pulseIn(ultrasonicSensor.echo, HIGH);
+       }
+     #+end_src
+*** Setup
+**** Components 
+     :PROPERTIES:
+     :header-args:arduino: :eval no :tangle no
+     :VISIBILITY: folded
+     :END:
+     Each motor's pins are going to be used for output
+    
+     #+name: setup/motor-pins
+     #+begin_src arduino 
+       for(MotorPins motor : motors) {
+         pinMode(motor.ena, OUTPUT);
+         pinMode(motor.in1, OUTPUT);
+         pinMode(motor.in2, OUTPUT);
+       }
+     #+end_src
+    
+     For ultrasonic sensors we have trigger being the pin to signal the component to burst a noise and the echo pin will read the response
+    
+     #+name: setup/ultrasonic-pins
+     #+begin_src arduino
+       for(UltrasonicSensorPins ultrasonicSensor : ultrasonicSensors) {
+         pinMode(ultrasonicSensor.trigger, OUTPUT);
+         pinMode(ultrasonicSensor.echo, INPUT);
+       }
+     #+end_src
+    
+     And finally speakers are all out
+    
+     #+name: setup/speaker-pins
+     #+begin_src arduino
+       for(int speaker : speakerPins) {
+         pinMode(speaker, OUTPUT);
+       }
+     #+end_src
+
+**** Setup function
+     Unfortunately this has to come after the components or tangling won't work properly
+   
+    #+begin_src arduino 
+      void setup() {
+      
+        <<setup/motor-pins>>
+        <<setup/ultrasonic-pins>>
+        <<setup/speaker-pins>>
+      
+        setSpeed(150);
+        turnClockwise();
+      }
+    #+end_src
+*** Loop 
+**** Loop contents
+     :PROPERTIES:
+     :header-args:arduino: :eval no :tangle no
+     :END:
+     
+     On each loop we first activate our ultrasonic sensors to take measurements. This doesn't technically have to be done synchronously, but is just so much easier if we do
+     
+     #+name: loop/closestDistance
+     #+begin_src arduino
+       long closestDistance = 0xFFFF;
+       for(UltrasonicSensorPins sensor : ultrasonicSensors) {
+         long value = readUltrasonicDistance(sensor);
+         if(value < closestDistance) {
+           closestDistance = value;
+         }
+        }
+     #+end_src
+     
+**** Loop flow
+     #+begin_src arduino
+       void loop() {
+         <<loop/closestDistance>>
+       }
+     #+end_src
+     
+** Run It
+   
+  #+call:../org/arduino-cli.org:board-list()
+
+  #+RESULTS:
+  | Port         | Type   | Board | Name  | FQBN    | Core |
+  | /dev/ttyUSB0 | Serial | Port  | (USB) | Unknown |      |
+  |              |        |       |       |         |      |
+  
+  Just to compile continuously:
+  
+   #+call:../org/ci.org:compile(default-directory=(car (org-property-values "workspace-directory")), heading-name="Avoiding Robot")
+
+  To compile and deploy:
+   
+  #+call:../org/ci.org:compile-and-deploy(default-directory=(car (org-property-values "workspace-directory")), port="/dev/ttyUSB0", board="arduino:avr:diecimila:cpu=atmega328")
