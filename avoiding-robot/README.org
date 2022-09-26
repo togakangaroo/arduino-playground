@@ -1,8 +1,8 @@
 * Avoiding Robot
-  :PROPERTIES:
-  :workspace-directory: /tmp/avoiding-robot
-  :header-args: :dir (car (org-property-values "workspace-directory")) :noweb yes
-  :END:
+    :PROPERTIES:
+    :workspace-directory: /tmp/avoiding-robot
+    :header-args: :dir (car (org-property-values "workspace-directory")) :noweb yes
+    :END:
 
   Now that we know how to drive motors and how to use an ultrasonic sensor then lets connect them together ala the challenge create robot
   
@@ -33,7 +33,7 @@
          int echo;
        };
        
-       const UltrasonicSensorPins ultrasonicSensors[1] = {{2, 3}};
+       const UltrasonicSensorPins ultrasonicSensors[1] = {{10, 11}};
      #+end_src
    
      Since the control for a motor is  
@@ -62,11 +62,14 @@
      I'd also like to communicate program state with a speaker
 
      #+begin_src arduino
-       const int speakerPins[1] { 10 };
+       const int speakerPins[1] { 13 };
      #+end_src
     
 *** Global State 
    
+    #+begin_src arduino
+      int consequitiveTimesDistanceUnderThreshold = 0;
+    #+end_src
     
 *** Helper Functions 
 **** Motor
@@ -133,21 +136,20 @@
        }
      #+end_src
 **** Read ultrasonic distance 
-     
      #+begin_src arduino
        long readUltrasonicDistance(UltrasonicSensorPins ultrasonicSensor)
        {
-         pinMode(ultrasonicSensor.trigger, OUTPUT);  // Clear the trigger
          digitalWrite(ultrasonicSensor.trigger, LOW);
          delayMicroseconds(2);
          digitalWrite(ultrasonicSensor.trigger, HIGH);
          delayMicroseconds(10);
          digitalWrite(ultrasonicSensor.trigger, LOW);
-         pinMode(ultrasonicSensor.echo, INPUT);
          // Reads the echo pin, and returns the sound wave travel time in microseconds
-         return pulseIn(ultrasonicSensor.echo, HIGH);
+         long echoBack = pulseIn(ultrasonicSensor.echo, HIGH);
+         return echoBack * 0.01723;
        }
      #+end_src
+     
 *** Setup
 **** Components 
      :PROPERTIES:
@@ -190,6 +192,8 @@
     #+begin_src arduino 
       void setup() {
       
+        Serial.begin(9600);
+      
         <<setup/motor-pins>>
         <<setup/ultrasonic-pins>>
         <<setup/speaker-pins>>
@@ -199,28 +203,65 @@
       }
     #+end_src
 *** Loop 
-**** Loop contents
+**** Loop state calculation
      :PROPERTIES:
      :header-args:arduino: :eval no :tangle no
      :END:
+
+     #+name: loop/state-declarations
+     #+begin_src arduino
+       bool shouldBackOut = false;
+     #+end_src
      
      On each loop we first activate our ultrasonic sensors to take measurements. This doesn't technically have to be done synchronously, but is just so much easier if we do
      
-     #+name: loop/closestDistance
+     #+name: loop/calculate-closestDistance
      #+begin_src arduino
        long closestDistance = 0xFFFF;
        for(UltrasonicSensorPins sensor : ultrasonicSensors) {
          long value = readUltrasonicDistance(sensor);
-         if(value < closestDistance) {
+         Serial.println(value);
+         if(0 < closestDistance && value < closestDistance) {
            closestDistance = value;
          }
         }
      #+end_src
+
+     Now if the closest distance is below threshold we need to know whether this has happened more than X amount of times consecutively
+     
+     #+name: loop/calculate-shouldBackOut
+     #+begin_src arduino
+       consequitiveTimesDistanceUnderThreshold += (0 < closestDistance && closestDistance < 30) ? 1 : 0;
+       
+       if(consequitiveTimesDistanceUnderThreshold >= 2) {
+         consequitiveTimesDistanceUnderThreshold = 0;
+         shouldBackOut = true;
+       }
+     #+end_src
      
 **** Loop flow
+     
      #+begin_src arduino
        void loop() {
-         <<loop/closestDistance>>
+         <<loop/state-declarations>>
+         <<loop/calculate-closestDistance>>
+         <<loop/calculate-shouldBackOut>>
+       
+         if(shouldBackOut) {
+           for(int speaker : speakerPins) {
+             tone(speaker, 500);
+           }
+           goBackward();
+           delayMicroseconds(1000);
+           turnClockwise();
+           delayMicroseconds(800);
+           goBackward();
+         } else {
+           for(int speaker : speakerPins) {
+             noTone(speaker);
+           }
+           goForward();
+         }
        }
      #+end_src
      
@@ -240,3 +281,8 @@
   To compile and deploy:
    
   #+call:../org/ci.org:compile-and-deploy(default-directory=(car (org-property-values "workspace-directory")), port="/dev/ttyUSB0", board="arduino:avr:diecimila:cpu=atmega328")
+
+
+  On the Duemilanove the serial monitor doesn't seem to work simply by looking at the port file. Use arduino ide for now. don't forget to turn off the monitor before expecting a deploy
+   
+   
