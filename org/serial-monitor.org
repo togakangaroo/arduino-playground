@@ -4,10 +4,11 @@
   
   #+name: serial-monitor
   #+begin_src emacs-lisp :results silent :var name="Serial Monitor" :var port="/dev/ttyACM0"
-    (let* ((buffer-name (format "*%s*" name)))
+    (let* ((buffer-name (format "*%s*" name))
+           (async-shell-command-buffer nil))
       (with-help-window (get-buffer-create buffer-name)
-        (async-shell-command (format "cat %s" port)
-                            buffer-name)))
+          (async-shell-command (format "cat %s" port)
+                              buffer-name)))
   #+end_src
 
   You can even see what's connected to ports used by arduino
