@@ -199,9 +199,9 @@
         <<setup/speaker-pins>>
       
         setSpeed(150);
-        turnClockwise();
       }
     #+end_src
+    
 *** Loop 
 **** Loop state calculation
      :PROPERTIES:
@@ -233,7 +233,7 @@
      #+begin_src arduino
        consequitiveTimesDistanceUnderThreshold += (0 < closestDistance && closestDistance < 30) ? 1 : 0;
        
-       if(consequitiveTimesDistanceUnderThreshold >= 2) {
+       if(consequitiveTimesDistanceUnderThreshold >= 1) {
          consequitiveTimesDistanceUnderThreshold = 0;
          shouldBackOut = true;
        }
@@ -252,9 +252,9 @@
              tone(speaker, 500);
            }
            goBackward();
-           delayMicroseconds(1000);
+           delay(1000);
            turnClockwise();
-           delayMicroseconds(800);
+           delay(1000);
            goBackward();
          } else {
            for(int speaker : speakerPins) {
