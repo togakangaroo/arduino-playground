@@ -12,6 +12,7 @@
   
   #+name: create-sketch
     #+begin_src emacs-lisp :var name=(->> (org-get-heading) (s-replace-all '((" " . "-"))) downcase) :var default-directory=(-> (spacemacs/copy-directory-path) directory-file-name) :results silent
-      (make-directory name 't)
-      (async-shell-command (format "arduino-cli sketch new %s" name))
+    (make-directory name 't)
+    (async-shell-command (format "arduino-cli sketch new %s" name))
+    name
     #+end_src

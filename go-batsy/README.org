@@ -1,0 +1,150 @@
+* Go Batsy
+  :PROPERTIES:
+  :workspace-directory: .
+  :header-args: :dir (--> "workspace-directory" (org-entry-get (point) it 1) (if  (s-equals? it ".") default-directory it) ))
+  :header-args+: :noweb yes
+  :header-args:emacs-lisp: :var default-directory=(--> "workspace-directory" (org-entry-get (point) it 1) (if  (s-equals? it ".") default-directory it) ))
+  :header-args:arduino: :eval no :tangle (format "%s/go-batsy.ino" (--> "workspace-directory" (org-entry-get (point) it 1) (if  (s-equals? it ".") default-directory it) ))
+  :END:
+
+  
+** Playground 
+  :PROPERTIES:
+  :workspace-directory: /tmp/go-batsy-playground
+  :END:
+  
+  #+call:../org/arduino-cli.org:create-sketch(default-directory="/tmp", name=(org-entry-get (point) "workspace-directory" 1)
+     
+*** Spinning motor slowly
+    I want to try doing this via pwm
+
+    Here are the Pico Pins: src_emacs-lisp[]{(browse-url-emacs "https://cdn.sparkfun.com/assets/9/c/3/c/4/523a1765757b7f5c6e8b4567.png") }
+
+    #+begin_src arduino :tangle (format "%s/go-batsy-playground.ino" (org-entry-get (point) "workspace-directory" 1))
+      #define MOTOR1 9
+
+      void setup() {
+        pinMode(MOTOR1, OUTPUT);
+        analogWrite(MOTOR1, 230);
+      }
+
+      void loop() {
+        delay(random(1000, 8000));
+        analogWrite(MOTOR1, random(130, 255));
+      }
+    #+end_src
+
+    #+call:../org/ci.org:compile-and-deploy(default-directory=(-> "workspace-directory" org-property-values car), port="/dev/ttyACM0", board="arduino:avr:leonardo")
+
+    Seems like speed can be =130 through 255=
+** Code
+   :PROPERTIES:
+   :workspace-directory: .
+   :END:
+
+*** Pins and Constants
+    #+begin_src arduino
+      #define MOTOR1 6
+      #define ULTRASONIC_ECHO 9
+      #define ULTRASONIC_TRIGGER 8
+    #+end_src
+*** On start
+    #+begin_src arduino
+      void setup() {
+        pinMode(MOTOR1, OUTPUT);
+        pinMode(ULTRASONIC_TRIGGER, OUTPUT);
+        pinMode(ULTRASONIC_ECHO, INPUT);
+      }
+    #+end_src
+*** Continuously
+    #+begin_src arduino
+  <<code/read-ultrasonic-distance>>
+  
+  void loop() {
+    <<code/exit-if-too-far>>
+  
+    <<code/until-its-chanced-were-done-change-speeds>>
+                        
+    <<code/stop-and-wait-for-a-bit>>
+  }
+    #+end_src
+**** When someone is not close
+     :PROPERTIES:
+     :header-args:arduino+: :tangle no
+     :END:
+
+     That means we need a function for measuring distance. Fortunately [[file:../ultrasonic-range-finder/README.org::*Ultrasonic Range Finder][we have one.]]
+
+     #+name: code/read-ultrasonic-distance
+     #+begin_src arduino
+       long readUltrasonicDistance(int triggerPin, int echoPin)
+       {
+         digitalWrite(triggerPin, LOW);
+         delayMicroseconds(2);
+         digitalWrite(triggerPin, HIGH);
+         delayMicroseconds(10);
+         digitalWrite(triggerPin, LOW);
+         pinMode(echoPin, INPUT);
+         // Time to return is multipled by the wavelength of audible sound...or something like that?
+         return 0.01725 * pulseIn(echoPin, HIGH);
+       }
+     #+end_src
+      And we can use this function to exit if someone is too far or not picked up on the rangefinder
+      
+      
+      #+name: code/exit-if-too-far
+      #+begin_src arduino
+        const long distance = readUltrasonicDistance(ULTRASONIC_TRIGGER, ULTRASONIC_ECHO);
+        if(distance <= 0 || 2 <= distance)
+          return;
+      #+end_src
+***** with a random
+****** chance of ending the loop
+       #+name: code/pick-chance-of-moving-on
+       #+begin_src arduino
+         const float chanceOfEndingTheLoop = random(10, 50) / 100.0;
+       #+end_src
+****** choice of switching directions
+       At the moment this isn't possible until I set up an h-bridge circuit
+***** until its chanced we're done
+      #+name: code/until-its-chanced-were-done-change-speeds
+      #+begin_src arduino
+        <<code/pick-chance-of-moving-on>>
+        while(random(100)/100.0 > chanceOfEndingTheLoop) {
+          <<code/set-a-new-speed>>
+          <<code/wait-for-a-while>>
+        }
+      #+end_src
+
+****** switch direction
+       Not yet supported
+****** set a new random speed
+       #+name: code/set-a-new-speed
+       #+begin_src arduino
+         analogWrite(MOTOR1, random(150, 255));
+       #+end_src
+****** wait for a random while
+       #+name: code/wait-for-a-while
+       #+begin_src arduino
+         delay(random(1000, 3000));
+       #+end_src
+***** then stop and wait for a bit  
+      
+      #+name: code/stop-and-wait-for-a-bit
+      #+begin_src arduino 
+        digitalWrite(MOTOR1, LOW);
+        delay(2000);
+      #+end_src
+** CI
+   
+   #+call: ../org/arduino-cli.org:board-list()
+
+   #+RESULTS:
+   | Port         | Type   | Board | Name  | FQBN    | Core     |                      |             |
+   | /dev/ttyACM0 | Serial | Port  | (USB) | Arduino | Leonardo | arduino:avr:leonardo | arduino:avr |
+   |              |        |       |       |         |          |                      |             |
+
+   #+call: ../org/ci.org:compile-and-deploy(default-directory=(spacemacs/copy-directory-path))
+   
+  #+call:../org/ci.org:compile-and-deploy(default-directory=(--> "workspace-directory" (org-entry-get (point) it 1) (if  (s-equals? it ".") default-directory it) ), port="/dev/ttyACM0", board="arduino:avr:leonardo")
+

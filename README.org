@@ -361,10 +361,13 @@
 
    Ok so the same thing as the Challenge Create
    
-   #+call: ./org/arduino-cli.org:create-sketch(
+   #+call: ./org/arduino-cli.org:create-sketch()
 
     [[file:avoiding-robot/README.org][Here it is]] 
-    
+   
+** Go Batsy
+   #+call: ./org/arduino-cli.org:create-sketch()
+    [[file:go-batsy/README.org][Here it is]] 
 ** Playground
    
     #+begin_src emacs-lisp :dir /tmp/playground
